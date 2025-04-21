@@ -198,7 +198,7 @@ def save_epochs_by_class(epochs, filename="eeg_epochs_EyesOpen.h5"):
 # MODULE 5: MAIN
 # =============================================================================
 def main():
-    directory = r"G:\Raw Data\Final_new_data"  # update as needed
+    directory = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"  # update as needed
     logger.info("Starting raw epoch extraction for EyesOpen")
     epochs = extract_epochs_for_EyesOpen(directory, config)
     if not epochs:

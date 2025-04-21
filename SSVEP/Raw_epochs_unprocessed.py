@@ -41,14 +41,14 @@ def load_raw_data(file_path):
 def extract_epochs_for_S9(directory, config):
     """
     For each subject/run, load segmented stimulus files,
-    trim 1s from start/end, baseline correct, and slice into epochs.
+    resample, trim 1s from start/end, baseline correct, and slice into epochs.
     """
     epochs_list = []
-    fs = config['target_fs']
-    win_samp = int(config['window_size'] * fs)
-    step = int(win_samp * (1 - config['overlap']))
+    fs         = config['target_fs']
+    win_samp   = int(config['window_size'] * fs)
+    step       = int(win_samp * (1 - config['overlap']))
 
-    root = Path(directory)
+    root     = Path(directory)
     subjects = list(root.glob('*Subject_*'))
 
     for subj in subjects:
@@ -59,9 +59,9 @@ def extract_epochs_for_S9(directory, config):
                 continue
 
             stim_folder = run_path / f"{subject_code}_Stimulus"
-            pattern = f"{subject_code}_S__9_seg_*_raw.vhdr"
-            files = list(stim_folder.glob(pattern))
-            counter = 0
+            pattern     = f"{subject_code}_S__9_seg_*_raw.vhdr"
+            files       = list(stim_folder.glob(pattern))
+            counter     = 0
 
             for f in files:
                 try:
@@ -69,6 +69,9 @@ def extract_epochs_for_S9(directory, config):
                 except Exception as e:
                     logger.error(f"Error loading {f}: {e}")
                     continue
+
+                # ---- NEW: resample to target_fs ----
+                raw.resample(fs, npad='auto')
 
                 data = raw.get_data()
                 trim = int(fs * 1)
@@ -81,10 +84,10 @@ def extract_epochs_for_S9(directory, config):
                 for start in range(0, data.shape[1] - win_samp + 1, step):
                     epoch = data[:, start:start + win_samp]
                     epochs_list.append({
-                        'data': epoch,
+                        'data':        epoch,
                         'class_label': subject_code,
-                        'epoch': counter,
-                        'run_id': run.split('_')[-1]
+                        'epoch':       counter,
+                        'run_id':      run.split('_')[-1]
                     })
                     counter += 1
 
@@ -98,9 +101,9 @@ def save_epochs_by_class(epochs, filename='raw_epochs_S9.h5'):
         os.remove(filename)
     with h5py.File(filename, 'w') as h5f:
         for e in epochs:
-            grp = h5f.require_group(f"class_{e['class_label']}")
-            run_grp = grp.require_group(f"Run_{e['run_id']}")
-            ep_grp = run_grp.create_group(f"epoch_{e['epoch']}")
+            grp      = h5f.require_group(f"class_{e['class_label']}")
+            run_grp  = grp.require_group(f"Run_{e['run_id']}")
+            ep_grp   = run_grp.create_group(f"epoch_{e['epoch']}")
             ep_grp.create_dataset('data', data=e['data'])
     logger.info(f"Saved {len(epochs)} epochs to {filename}")
 
@@ -108,14 +111,14 @@ def save_epochs_by_class(epochs, filename='raw_epochs_S9.h5'):
 # MODULE: MAIN
 # =============================================================================
 def main():
-    data_dir = r"D:\Smarth_work\Final_new_data - Copy"  # adjust as needed
+    data_dir = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"  # adjust as needed
     logger.info("Extracting raw epochs without preprocessing...")
     epochs = extract_epochs_for_S9(data_dir, config)
     if not epochs:
         logger.error("No epochs extracted. Check paths and files.")
         return
     logger.info(f"Extracted {len(epochs)} epochs.")
-    save_epochs_by_class(epochs, 'All_sub_raw_epochs_S9.h5')
+    save_epochs_by_class(epochs, 'All_sub_raw_epochs_S9_unprocessed.h5')
 
 if __name__ == '__main__':
     main()

@@ -12,7 +12,7 @@ import mne
 # ----------------------------------------------------------------------------- #
 config = {
     "window_size": 2.0,    # seconds
-    "overlap": 0.5,        # fraction
+    "overlap": 0.5,        # fraction (50%)
     "target_fs": 500       # Hz
 }
 
@@ -25,17 +25,16 @@ logger = logging.getLogger(__name__)
 logger.info("Configuration: %s", config)
 
 # =============================================================================
-# MODULE: EPOCH EXTRACTION & SAVING (No Preprocessing)
+# MODULE: EPOCH EXTRACTION & SAVING (No Preprocessing, but with Resampling)
 # =============================================================================
 
 def save_epochs_for_S4(root_dir, output_file, fs, window_size, overlap):
     """
     Save raw multichannel epochs of *S4* stimulus files to an HDF5 organized by subject and run.
-    This version skips preprocessing and baseline correction.
+    This version skips filtering/ICA but DOES resample to `fs` so that
+    trimming and windowing remain consistent.
     """
     root = Path(root_dir)
-    win_samp = int(window_size * fs)
-    step = int(win_samp * (1 - overlap))
 
     with h5py.File(output_file, 'w') as h5f:
         for subj_path in root.glob('*Subject_*'):
@@ -52,32 +51,40 @@ def save_epochs_for_S4(root_dir, output_file, fs, window_size, overlap):
                     continue
 
                 grp_subj = h5f.require_group(f'class_{subj_code}')
-                grp_run = grp_subj.require_group(run_name)
-
+                grp_run  = grp_subj.require_group(run_name)
                 epoch_ctr = 0
+
                 for raw_file in s4_files:
                     try:
                         raw = mne.io.read_raw_brainvision(str(raw_file), preload=True)
 
+                        # ---- RESAMPLE to target_fs ----
+                        raw.resample(fs, npad='auto')
+                        sfreq = raw.info['sfreq']  # now equals fs
+
                         data = raw.get_data()  # shape: (n_channels, n_times)
 
-                        # Trim first and last second
-                        trim = int(fs)
+                        # compute sample counts from up‑to‑date sfreq
+                        win_samp = int(window_size * sfreq)
+                        step     = int(win_samp * (1 - overlap))
+                        trim     = int(1.0 * sfreq)  # trim 1 second
+
+                        # skip if too short
                         if data.shape[1] <= 2 * trim:
                             logger.warning("Too short after trim: %s", raw_file.name)
                             continue
-                        data = data[:, trim:-trim]
 
-                        # Global baseline subtraction
+                        # global baseline subtraction after trim
+                        data = data[:, trim:-trim]
                         data -= data.mean(axis=1, keepdims=True)
 
-                        # Sliding window segmentation
+                        # sliding window epochs
                         for start in range(0, data.shape[1] - win_samp + 1, step):
                             epoch = data[:, start:start + win_samp]
                             grp_epoch = grp_run.create_group(f'epoch_{epoch_ctr}')
                             dset = grp_epoch.create_dataset('data', data=epoch)
-                            dset.attrs['subject'] = subj_code
-                            dset.attrs['run'] = run_name
+                            dset.attrs['subject']     = subj_code
+                            dset.attrs['run']         = run_name
                             dset.attrs['source_file'] = raw_file.name
                             epoch_ctr += 1
 
@@ -86,14 +93,15 @@ def save_epochs_for_S4(root_dir, output_file, fs, window_size, overlap):
 
     logger.info("Epochs saved to %s", output_file)
 
+
 # =============================================================================
 # MAIN EXECUTION
 # =============================================================================
 
 def main():
-    data_dir = r"D:\Smarth_work\Final_new_data - Copy"
-    out_h5 = "eeg_raw_epochs_S4.h5"
-    fs = config['target_fs']
+    data_dir = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"
+    out_h5   = "eeg_raw_epochs_S4_unprocessed_resampled.h5"
+    fs       = config['target_fs']
     save_epochs_for_S4(data_dir, out_h5, fs, config['window_size'], config['overlap'])
 
 if __name__ == '__main__':

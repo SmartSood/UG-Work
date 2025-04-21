@@ -144,7 +144,7 @@ def save_epochs_by_class(epochs, filename='eeg_epochs_S11.h5'):
 # Main pipeline
 # -----------------------------------------------------------------------------
 def main():
-    directory = r"G:\Raw Data\Final_new_data"
+    directory = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"
     params = config
     logger.info("Extracting raw epochs for S11...")
     epoch_list = extract_epochs_for_S11(directory, params['fs'], params['window_size'], params['overlap'])

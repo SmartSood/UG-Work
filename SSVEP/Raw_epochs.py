@@ -178,7 +178,7 @@ def save_epochs_by_class(epochs, filename='raw_epochs_S9.h5'):
 # MODULE 4: MAIN
 # =============================================================================
 def main():
-    data_dir = r"G:\Raw Data\Final_new_data"  # adjust as needed
+    data_dir = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"  # adjust as needed
     logger.info("Extracting raw epochs...")
     epochs = extract_epochs_for_S9(data_dir, config)
     if not epochs:

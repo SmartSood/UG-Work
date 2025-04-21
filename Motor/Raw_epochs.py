@@ -176,7 +176,7 @@ def save_epochs_for_S4(root_dir, output_file, fs, window_size, overlap):
 # =============================================================================
 
 def main():
-    data_dir = r"G:\Raw Data\Final_new_data"
+    data_dir = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"
     out_h5 = "eeg_raw_epochs_S4.h5"
     fs = config['target_fs']
     save_epochs_for_S4(data_dir, out_h5, fs, config['window_size'], config['overlap'])

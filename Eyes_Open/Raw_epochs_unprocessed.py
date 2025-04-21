@@ -46,7 +46,7 @@ def load_raw_data(file_path):
 def extract_epochs_for_EyesOpen(root_dir, cfg):
     """
     Traverse Subject_/Run folders, locate EyesOpen .vhdr files,
-    load raw, trim 1s from beginning/end, and slice into epochs.
+    load raw, resample, trim 1s from beginning/end, and slice into epochs.
     """
     epochs = []
     root = Path(root_dir)
@@ -67,6 +67,10 @@ def extract_epochs_for_EyesOpen(root_dir, cfg):
             for vhdr in eyes_dir.glob("*.vhdr"):
                 try:
                     raw = load_raw_data(vhdr)
+
+                    # ---- NEW: resample to target_fs ----
+                    raw.resample(fs, npad='auto')
+
                     data = raw.get_data()
                 except Exception as e:
                     logger.error("Error loading %s: %s", vhdr, e)
@@ -84,10 +88,10 @@ def extract_epochs_for_EyesOpen(root_dir, cfg):
                 for start in range(0, data.shape[1] - win_samp + 1, step):
                     epoch = data[:, start:start + win_samp]
                     epochs.append({
-                        "data": epoch,
+                        "data":        epoch,
                         "class_label": subj,
-                        "epoch": ep_idx,
-                        "run_id": run_id
+                        "epoch":       ep_idx,
+                        "run_id":      run_id
                     })
                     ep_idx += 1
 
@@ -122,13 +126,13 @@ def save_epochs_by_class(epochs, filename="eeg_epochs_EyesOpen.h5"):
 # MODULE 4: MAIN
 # =============================================================================
 def main():
-    directory = r"D:\Smarth_work\Final_new_data - Copy"  # Update as needed
+    directory = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"  # Update as needed
     logger.info("Starting raw epoch extraction for EyesOpen (No preprocessing)")
     epochs = extract_epochs_for_EyesOpen(directory, config)
     if not epochs:
         logger.error("No epochs extracted; check file paths and folder structure")
         return
-    save_epochs_by_class(epochs, filename="AllSub_EyesOpen_epochs_RAW.h5")
+    save_epochs_by_class(epochs, filename="AllSub_EyesOpen_epochs_RAW_unprocessed.h5")
     logger.info("Done!")
 
 if __name__ == "__main__":

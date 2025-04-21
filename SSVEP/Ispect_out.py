@@ -1,6 +1,6 @@
 import h5py
 
-def inspect_hdf5_file(filename='All_sub_raw_epochs_S9.h5'):
+def inspect_hdf5_file(filename='All_sub_raw_epochs_S9_unprocessed.h5'):
     """
     Print the structure of the HDF5 file, including groups and datasets.
     """

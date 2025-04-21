@@ -147,7 +147,7 @@ def extract_and_save_epochs_for_S5(directory, output_file):
 
 
 def main():
-    data_dir = r"G:\Raw Data\Final_new_data"  # update as needed
+    data_dir = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"  # update as needed
     out_file = 'raw_S5_epochs.h5'
     extract_and_save_epochs_for_S5(data_dir, out_file)
 

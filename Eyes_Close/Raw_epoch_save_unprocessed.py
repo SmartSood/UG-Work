@@ -1,8 +1,9 @@
 import os
 import logging
 from pathlib import Path
-import numpy as np
+
 import h5py
+import numpy as np
 import mne
 
 # ----------------------------------------------------------------------------- #
@@ -17,20 +18,21 @@ logger = logging.getLogger(__name__)
 # ============================================================================= #
 def load_raw_data(file_path):
     file_path = Path(file_path)
-    if file_path.suffix.lower() == '.fif':
+    suffix = file_path.suffix.lower()
+    if suffix == '.fif':
         return mne.io.read_raw_fif(str(file_path), preload=True)
-    elif file_path.suffix.lower() == '.vhdr':
+    elif suffix == '.vhdr':
         return mne.io.read_raw_brainvision(str(file_path), preload=True)
     else:
         raise ValueError(f"Unsupported file format: {file_path}")
 
 # ============================================================================= #
-# MODULE 2: RAW-EPOCH EXTRACTION
+# MODULE 2: RAW‑EPOCH EXTRACTION
 # ============================================================================= #
 def extract_epochs_for_S3(directory, fs, window_size=2, overlap=0.5):
     """
     Walk subject folders named *Subject_*
-    Load raw files, trim 1s ends,
+    Load raw files, resample to fs, trim 1s ends,
     then slide a [n_ch × window_samples] window
     and collect raw epochs.
     """
@@ -54,7 +56,11 @@ def extract_epochs_for_S3(directory, fs, window_size=2, overlap=0.5):
             cnt = 0
             for fpath in files:
                 try:
-                    raw = mne.io.read_raw_fif(str(fpath), preload=True)
+                    raw = load_raw_data(fpath)
+
+                    # ---- NEW: resample to target_fs ----
+                    raw.resample(fs, npad='auto')
+
                     data = raw.get_data()  # shape: (n_ch, n_samples)
                 except Exception as e:
                     logger.error("Failed %s: %s", fpath, e)
@@ -71,10 +77,10 @@ def extract_epochs_for_S3(directory, fs, window_size=2, overlap=0.5):
                 for start in range(0, data.shape[1] - win_samp + 1, step):
                     window = data[:, start:start + win_samp]
                     epochs.append({
-                        'data':     window,
+                        'data':        window,
                         'class_label': subj_code,
-                        'run_id':     run.name.split('_')[-1],
-                        'epoch':      cnt
+                        'run_id':      run.name.split('_')[-1],
+                        'epoch':       cnt
                     })
                     cnt += 1
 
@@ -107,7 +113,7 @@ def save_epochs_by_class(epochs, filename="raw_epochs_S3.h5"):
 # MODULE 4: MAIN PIPELINE
 # ============================================================================= #
 def main():
-    directory   = r"D:\Smarth_work\Final_new_data - Copy"
+    directory   = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"
     fs          = 500
     window_size = 2    # seconds
     overlap     = 0.5  # 50%
@@ -118,7 +124,7 @@ def main():
         logger.error("No epochs extracted. Check your data paths.")
         return
 
-    save_epochs_by_class(epochs, filename="All_sub_eyes_close_epochs.h5")
+    save_epochs_by_class(epochs, filename="All_sub_eyes_close_epochs_unprocessed.h5")
 
     logger.info("File counts per subject:")
     for subj, cnt in summary.items():

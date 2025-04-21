@@ -167,7 +167,7 @@ def save_epochs_by_class(epochs, filename="raw_epochs_S3.h5"):
 # MODULE 4: MAIN PIPELINE
 # ============================================================================= #
 def main():
-    directory   = r"G:\Raw Data\Final_new_data"
+    directory   = r"G:\Smarth_work\unprocesed_dATA\Final_new_data"
     fs          = 500
     window_size = 2    # seconds
     overlap     = 0.5  # 50%

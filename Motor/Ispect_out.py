@@ -1,6 +1,6 @@
 import h5py
 
-def inspect_hdf5_file(filename='eeg_raw_epochs_S4.h5'):
+def inspect_hdf5_file(filename='eeg_raw_epochs_S4_unprocessed_resampled.h5'):
     """
     Print the structure of the HDF5 file, including groups and datasets.
     """
